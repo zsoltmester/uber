@@ -10,14 +10,14 @@
 #define MAX_NUMBER_OF_ROUTES 10
 #define DB_FILE_NAME "uber.db"
 
-typedef enum 
+enum cmd 
 {
 	HELP, LIST_ROUTES
-} cmd;
+};
 
 struct task
 {
-	cmd cmd;
+	enum cmd cmd;
 	int num_of_args;
 	char ** args;
 };
