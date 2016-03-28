@@ -10,15 +10,13 @@
 #define MAX_NUMBER_OF_ROUTES 10
 #define DB_FILE_NAME "uber.db"
 
-void add_route(char * destination);
-int is_route_available(char * destination);
 void init_db();
 int save_db();
 int read_db();
 void trim(char * str);
 
 struct route * routes;
-int numOfRoutes;
+int num_of_routes;
 FILE * db;
 
 int main(int argc, char **argv) 
@@ -26,7 +24,7 @@ int main(int argc, char **argv)
 	// TODO process args
 
 	routes = malloc(sizeof(struct route) * MAX_NUMBER_OF_ROUTES);
-	numOfRoutes = 0;
+	num_of_routes = 0;
 
 	if (access(DB_FILE_NAME, W_OK) == 0) 
 	{
@@ -46,9 +44,9 @@ int main(int argc, char **argv)
 	{
 		// first run or removed db. we should initialize it
 		init_db();
-		add_route("Krakkó");
-		add_route("Prága");
-		add_route("Bécs");
+		add_route("Krakkó", MAX_NUMBER_OF_ROUTES, &num_of_routes, routes);
+		add_route("Prága", MAX_NUMBER_OF_ROUTES, &num_of_routes, routes);
+		add_route("Bécs", MAX_NUMBER_OF_ROUTES, &num_of_routes, routes);
 	}
 	
 	// TODO do the task
@@ -83,7 +81,7 @@ int save_db()
 		return 1;
 		
 	int i;
-	for (i = 0; i < numOfRoutes; i++) 
+	for (i = 0; i < num_of_routes; i++) 
 	{
 		if(fprintf(db, "%s\n", routes[i].destination) <= 0)
 			return 1;
@@ -105,7 +103,7 @@ int read_db()
 			printf("[ERROR] Corrupt db file.\n");
 			exit(1);
     	}
-    	add_route(line);
+    	add_route(line, MAX_NUMBER_OF_ROUTES, &num_of_routes, routes);
     }
 	
 	if (line)
@@ -137,39 +135,4 @@ void trim(char * str)
     }
 
     memmove(str, trimmed, len + 1);
-}
-
-void add_route(char * destination)
-{
-	if (numOfRoutes == MAX_NUMBER_OF_ROUTES) 
-	{
-		printf("[ERROR] No more routes allowed.\n");
-		exit(1);
-	}
-	if (strlen(destination) == 0) 
-	{
-		printf("[ERROR] Destination is empty.\n");
-		exit(1);
-	}
-	if (is_route_available(destination)) 
-	{
-		printf("[ERROR] This destination is already available.\n");
-		exit(1);
-	}
-	
-	routes[numOfRoutes].destination = malloc(strlen(destination));
-	strcpy(routes[numOfRoutes].destination, destination);
-	++numOfRoutes;
-}
-
-int is_route_available(char * destination) 
-{
-	int i;
-	for (i = 0; i < numOfRoutes; i++) 
-	{
-		if (strcmp(routes[i].destination, destination) == 0)
-			return 1;
-	}
-
-	return 0;
 }
