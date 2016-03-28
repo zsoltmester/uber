@@ -78,7 +78,8 @@ void init_db()
 
 int save_db()
 {
-	if (ftruncate(fileno(db), 0))
+	db = freopen(NULL, "w+", db);
+	if (db == NULL)
 		return 1;
 		
 	int i;
