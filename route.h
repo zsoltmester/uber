@@ -6,6 +6,8 @@ struct route {
 };
 
 int add_route(char * destination, int max_number_of_routes, int * num_of_routes, struct route * routes);
+int parse_lines(char ** lines, int num_of_lines, int max_number_of_routes, int * num_of_routes, struct route * routes);
 int is_route_available(char * destination, int num_of_routes, struct route * routes);
+char ** routes_to_lines(int num_of_routes, struct route * routes);
 
 #endif
