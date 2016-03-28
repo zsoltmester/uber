@@ -10,18 +10,13 @@
 #define MAX_NUMBER_OF_ROUTES 10
 #define DB_FILE_NAME "uber.db"
 
-struct route * routes;
-int num_of_routes;
-FILE * db;
-
 int main(int argc, char ** argv) 
 {
 	// TODO process args
 
-	routes = malloc(sizeof(struct route) * MAX_NUMBER_OF_ROUTES);
-	num_of_routes = 0;
-	char ** lines;
-	int num_of_lines;
+	struct route * routes = malloc(sizeof(struct route) * MAX_NUMBER_OF_ROUTES);
+	int num_of_routes = 0;
+	FILE * db;
 
 	if (access(DB_FILE_NAME, W_OK) == 0) 
 	{
@@ -32,8 +27,8 @@ int main(int argc, char ** argv)
 			return 1;
 		}
 		
-		num_of_lines = 0;
-		lines = read_db(db, MAX_NUMBER_OF_ROUTES, &num_of_lines);
+		int num_of_lines = 0;
+		char ** lines = read_db(db, MAX_NUMBER_OF_ROUTES, &num_of_lines);
 		if (lines == NULL)
 		{ 
 			printf("[ERROR] Unable to read the database.\n");
@@ -45,6 +40,11 @@ int main(int argc, char ** argv)
 			printf("[ERROR] Unable to parse the database.\n");
 			return 1;
 		}
+		
+		int i;
+		for (i = 0; i < num_of_lines; ++i)
+			free(lines[i]);
+		free(lines);
 	}
 	else 
 	{
@@ -65,39 +65,22 @@ int main(int argc, char ** argv)
 	// TODO do the task
 	
 	// save the db
-	lines = routes_to_lines(num_of_routes, routes);
+	char ** lines = routes_to_lines(num_of_routes, routes);
 	if (save_db(db, num_of_routes, lines) && close_db(db))
 	{
 		printf("[ERROR] Failed to save the database.\n");
 		return 1;
 	}
 	
-	// TODO free up some memory
+	// free up some memory
+	int i;
+	for (i = 0; i < num_of_routes; ++i)
+	{
+		free(lines[i]);
+		free(routes[i].destination);
+	}
+	free(lines);
+	free(routes);
 	
 	return 0;
 }
-
-/*void trim(char * str) 
-{
-    int len = strlen(str);
-    if (len == 0)
-    	return;
-    
-    char * trimmed = str;
-
-	// trim the whitespaces from the end
-    while(isspace(trimmed[len - 1])) 
-    {
-    	--len;
-    	trimmed[len] = 0;
-    }
-    
-    // trim the whitespaces from the start
-    while(*trimmed && isspace(*trimmed)) 
-    {
-    	--len;
-    	++trimmed;
-    }
-
-    memmove(str, trimmed, len + 1);
-}*/

@@ -33,10 +33,8 @@ int parse_lines(char ** lines, int num_of_lines, int max_number_of_routes, int *
 {
 	int i;
 	for (i = 0; i < num_of_lines; ++i)
-	{
 		if (add_route(lines[i], max_number_of_routes, num_of_routes, routes))
 			return 1;
-	}
 	return 0;
 }
 
@@ -44,10 +42,8 @@ int is_route_available(char * destination, int num_of_routes, struct route * rou
 {
 	int i;
 	for (i = 0; i < num_of_routes; i++) 
-	{
 		if (strcmp(routes[i].destination, destination) == 0)
 			return 1;
-	}
 
 	return 0;
 }

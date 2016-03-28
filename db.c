@@ -16,10 +16,8 @@ int save_db(FILE * db, int num_of_lines, char ** lines)
 		
 	int i;
 	for (i = 0; i < num_of_lines; i++) 
-	{
 		if(fprintf(db, "%s\n", lines[i]) <= 0)
 			return 1;
-	}
 	
 	return 0;
 }
