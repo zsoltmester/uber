@@ -5,21 +5,17 @@
 #include <unistd.h>
 
 #include "route.h"
+#include "db.h"
 
 // customization points
 #define MAX_NUMBER_OF_ROUTES 10
 #define DB_FILE_NAME "uber.db"
 
-void init_db();
-int save_db();
-int read_db();
-void trim(char * str);
-
 struct route * routes;
 int num_of_routes;
 FILE * db;
 
-int main(int argc, char **argv) 
+int main(int argc, char ** argv) 
 {
 	// TODO process args
 
@@ -43,7 +39,10 @@ int main(int argc, char **argv)
 	else 
 	{
 		// first run or removed db. we should initialize it
-		init_db();
+		printf("%s is not available, it will be created with the default values...\n", DB_FILE_NAME);
+		init_db(&db, DB_FILE_NAME);
+		printf("%s sucessfully created.\n", DB_FILE_NAME);
+		
 		add_route("Krakkó", MAX_NUMBER_OF_ROUTES, &num_of_routes, routes);
 		add_route("Prága", MAX_NUMBER_OF_ROUTES, &num_of_routes, routes);
 		add_route("Bécs", MAX_NUMBER_OF_ROUTES, &num_of_routes, routes);
@@ -51,63 +50,21 @@ int main(int argc, char **argv)
 	
 	// TODO do the task
 	
-	if (save_db())
-	{
-		perror("[ERROR] Failed to save the database.\n");
-		free(routes);
-		exit(1);
-	}
-	free(routes);
-	
-	return 0;
-}
-
-void init_db()
-{
-	printf("uber.db is not available, it will be created with the default values...\n");
-	db = fopen(DB_FILE_NAME, "w+");
-	if (db == NULL)
-	{ 
-		perror("[ERROR] Unable to create the database.\n");
-		exit(1);
-	}
-	printf("uber.db sucessfully created.\n");
-}
-
-int save_db()
-{
-	db = freopen(NULL, "w+", db);
-	if (db == NULL)
-		return 1;
-		
+	// save the db
+	char ** lines = malloc(sizeof(char *) * num_of_routes);
 	int i;
 	for (i = 0; i < num_of_routes; i++) 
 	{
-		if(fprintf(db, "%s\n", routes[i].destination) <= 0)
-			return 1;
+		lines[i] = malloc(strlen(routes[i].destination));
+		strcpy(lines[i], routes[i].destination);
+	}
+	if (save_db(db, num_of_routes, lines) && close_db(db))
+	{
+		perror("[ERROR] Failed to save the database.\n");
+		return 1;
 	}
 	
-	return fclose(db);
-}
-
-int read_db()
-{
-	char * line = NULL;
-    size_t len = 0;
-    
-    while (getline(&line, &len, db) != -1) 
-    {
-    	trim(line);
-    	if (strlen(line) == 0)
-    	{
-			printf("[ERROR] Corrupt db file.\n");
-			exit(1);
-    	}
-    	add_route(line, MAX_NUMBER_OF_ROUTES, &num_of_routes, routes);
-    }
-	
-	if (line)
-		free(line);
+	// TODO free up some memory
 	
 	return 0;
 }
@@ -135,4 +92,26 @@ void trim(char * str)
     }
 
     memmove(str, trimmed, len + 1);
+}
+
+int read_db()
+{
+	char * line = NULL;
+    size_t len = 0;
+    
+    while (getline(&line, &len, db) != -1) 
+    {
+    	trim(line);
+    	if (strlen(line) == 0)
+    	{
+			printf("[ERROR] Corrupt db file.\n");
+			return 1;
+    	}
+    	add_route(line, MAX_NUMBER_OF_ROUTES, &num_of_routes, routes);
+    }
+	
+	if (line)
+		free(line);
+	
+	return 0;
 }
