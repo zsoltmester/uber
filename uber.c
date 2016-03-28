@@ -15,19 +15,21 @@ typedef enum
 	HELP, LIST_ROUTES
 } cmd;
 
-typedef struct
+struct task
 {
 	cmd cmd;
 	int num_of_args;
 	char ** args;
-} task;
+};
 
 void free_array(void ** arr, int len);
 void init_state();
 void save_state();
 void clear();
-task * parse_args(int argc, char ** argv);
+struct task * parse_args(int argc, char ** argv);
+void do_task(struct task * task);
 void task_help();
+void task_list_routes();
 
 struct route * routes;
 int num_of_routes;
@@ -35,17 +37,10 @@ FILE * db;
 
 int main(int argc, char ** argv) 
 {
-	task * task = parse_args(argc, argv);
-	if (task == NULL || task -> cmd == HELP)
-	{
-		task_help();
-		return 0;
-	}
-
+	struct task * task = parse_args(argc, argv);
 	init_state();
-	
-	// TODO do the task
-	
+	do_task(task);
+	free(task);
 	save_state();
 	clear();
 	return 0;
@@ -142,26 +137,60 @@ void clear()
 	free(routes);
 }
 
-task * parse_args(int argc, char ** argv)
+struct task * parse_args(int argc, char ** argv)
 {
+	struct task * task = malloc(sizeof(task));
+	
 	if (argc < 2)
-		return NULL;
+	{
+		task -> cmd = HELP;
+		return task;
+	}
 		
 	char * raw_cmd = argv[1];
-		
-	if (strcmp(raw_cmd, "help"))
+	
+	if (strcmp(raw_cmd, "help") == 0)
+	{
+		task -> cmd = HELP;
+	}	
+	else if (strcmp(raw_cmd, "list-routes") == 0)
+	{
+		task -> cmd = LIST_ROUTES;
+	}
+	else
 	{
 		printf("Invalid command: %s\n", raw_cmd);
+		task -> cmd = HELP;
 	}
 	
-	task * task = malloc(sizeof(task));
-	task -> cmd = HELP;
 	return task;
+}
+
+void do_task(struct task * task)
+{
+	switch(task -> cmd)
+	{
+		case HELP:
+			task_help();
+			break;
+		case LIST_ROUTES:
+			task_list_routes();
+			break;
+	}
 }
 
 void task_help()
 {
 	puts("NAME\n\tuber - Best of ŰBER - A passenger management tool.\n\
 SYNOPSIS\n\tuber <command> [<args>]\n\
-COMMANDS\n\thelp - Display help about the usage.\n");
+COMMANDS\n\
+\thelp - This help.\n\
+\tlist-routes - List of the available routes.\n");
+}
+
+void task_list_routes()
+{
+	int i;
+	for (i = 0; i < num_of_routes; ++i)
+		printf("%s\n", routes[i].destination);
 }
