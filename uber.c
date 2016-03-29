@@ -8,6 +8,7 @@
 
 // customization points
 #define MAX_NUMBER_OF_ROUTES 10
+#define MAX_NUMBER_OF_PASSENGERS 10
 #define DB_FILE_NAME "uber.db"
 
 enum cmd 

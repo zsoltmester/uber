@@ -24,17 +24,10 @@ int add_route(char * destination, int max_number_of_routes, int * num_of_routes,
 	
 	routes[*num_of_routes].destination = malloc(strlen(destination));
 	strcpy(routes[*num_of_routes].destination, destination);
+	routes[*num_of_routes].passengers = NULL;
+	routes[*num_of_routes].num_of_passengers = 0;
 	++*num_of_routes;
 	
-	return 0;
-}
-
-int parse_lines(char ** lines, int num_of_lines, int max_number_of_routes, int * num_of_routes, struct route * routes)
-{
-	int i;
-	for (i = 0; i < num_of_lines; ++i)
-		if (add_route(lines[i], max_number_of_routes, num_of_routes, routes))
-			return 1;
 	return 0;
 }
 
@@ -76,7 +69,7 @@ int remove_route(char * destination, int * num_of_routes, struct route * routes)
 				
 			int j;
 			for (j = i; j < *num_of_routes - 1; ++j) 
-				strcpy(routes[j].destination, routes[j + 1].destination);
+				routes[j] = routes[j + 1];
 		}
 	
 	--*num_of_routes;
@@ -84,8 +77,43 @@ int remove_route(char * destination, int * num_of_routes, struct route * routes)
 	return 0;
 }
 
+int add_passenger(char * name, char * phone, time_t reg_time, struct route * route, int max_number_of_passengers)
+{
+	if (route -> num_of_passengers == max_number_of_passengers) 
+	{
+		printf("[ERROR] No more passengers allowed.\n");
+		return 1;
+	}
+	if (is_passenger_available(name, route)) 
+	{
+		printf("[ERROR] This passenger is already exists.\n");
+		return 1;
+	}
+	
+	if (route -> num_of_passengers == 0)
+		route -> passengers = malloc(sizeof(struct passenger) * max_number_of_passengers);
+	
+	route -> passengers[route -> num_of_passengers].name = name;
+	route -> passengers[route -> num_of_passengers].phone = phone;
+	route -> passengers[route -> num_of_passengers].reg_time = reg_time;
+	++(route -> num_of_passengers);
+	
+	return 0;
+}
+
+int is_passenger_available(char * name, struct route * route)
+{
+	int i;
+	for(i = 0; i < route -> num_of_passengers; ++i)
+		if (strcmp(route -> passengers[i].name, name) == 0)
+			return 1;
+		
+	return 0;
+}
+
 char ** routes_to_lines(int num_of_routes, struct route * routes)
 {
+	// TODO write out passengers
 	char ** lines = malloc(sizeof(char *) * num_of_routes);
 	int i;
 	for (i = 0; i < num_of_routes; i++) 
@@ -94,4 +122,14 @@ char ** routes_to_lines(int num_of_routes, struct route * routes)
 		strcpy(lines[i], routes[i].destination);
 	}
 	return lines;
+}
+
+int parse_lines(char ** lines, int num_of_lines, int max_number_of_routes, int * num_of_routes, struct route * routes)
+{
+	// TODO parse passengers
+	int i;
+	for (i = 0; i < num_of_lines; ++i)
+		if (add_route(lines[i], max_number_of_routes, num_of_routes, routes))
+			return 1;
+	return 0;
 }
