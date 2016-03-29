@@ -48,6 +48,42 @@ int is_route_available(char * destination, int num_of_routes, struct route * rou
 	return 0;
 }
 
+int remove_route(char * destination, int * num_of_routes, struct route * routes)
+{
+	if (*num_of_routes == 1)
+	{
+		printf("[ERROR] You should have at least one route.\n");
+		return 1;
+	}
+
+	if (strlen(destination) == 0) 
+	{
+		printf("[ERROR] Destination is empty.\n");
+		return 1;
+	}
+	if (is_route_available(destination, *num_of_routes, routes) == 0) 
+	{
+		printf("[ERROR] No route available for this destination.\n");
+		return 1;
+	}
+	
+	int i;
+	for (i = 0; i < *num_of_routes; ++i)
+		if (strcmp(routes[i].destination, destination) == 0)
+		{
+			if(i == *num_of_routes - 1)
+				break;
+				
+			int j;
+			for (j = i; j < *num_of_routes - 1; ++j) 
+				strcpy(routes[j].destination, routes[j + 1].destination);
+		}
+	
+	--*num_of_routes;
+	
+	return 0;
+}
+
 char ** routes_to_lines(int num_of_routes, struct route * routes)
 {
 	char ** lines = malloc(sizeof(char *) * num_of_routes);

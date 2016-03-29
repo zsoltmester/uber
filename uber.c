@@ -12,7 +12,10 @@
 
 enum cmd 
 {
-	HELP, LIST_ROUTES
+	HELP, 
+	LIST_ROUTES,
+	ADD_ROUTE,
+	REMOVE_ROUTE
 };
 
 struct task
@@ -30,6 +33,8 @@ struct task * parse_args(int argc, char ** argv);
 void do_task(struct task * task);
 void task_help();
 void task_list_routes();
+void task_add_route(struct task * task);
+void task_remove_route(struct task * task);
 
 struct route * routes;
 int num_of_routes;
@@ -146,6 +151,12 @@ struct task * parse_args(int argc, char ** argv)
 		task -> cmd = HELP;
 		return task;
 	}
+	
+	task -> num_of_args = argc - 2;
+	if (task -> num_of_args > 0)
+		task -> args = argv + 2;
+	else
+		task -> args = NULL;
 		
 	char * raw_cmd = argv[1];
 	
@@ -156,6 +167,14 @@ struct task * parse_args(int argc, char ** argv)
 	else if (strcmp(raw_cmd, "list-routes") == 0)
 	{
 		task -> cmd = LIST_ROUTES;
+	}	
+	else if (strcmp(raw_cmd, "add-route") == 0)
+	{
+		task -> cmd = ADD_ROUTE;
+	}	
+	else if (strcmp(raw_cmd, "remove-route") == 0)
+	{
+		task -> cmd = REMOVE_ROUTE;
 	}
 	else
 	{
@@ -176,6 +195,12 @@ void do_task(struct task * task)
 		case LIST_ROUTES:
 			task_list_routes();
 			break;
+		case ADD_ROUTE:
+			task_add_route(task);
+			break;
+		case REMOVE_ROUTE:
+			task_remove_route(task);
+			break;
 	}
 }
 
@@ -185,7 +210,11 @@ void task_help()
 SYNOPSIS\n\tuber <command> [<args>]\n\
 COMMANDS\n\
 \thelp - This help.\n\
-\tlist-routes - List of the available routes.\n");
+\tlist-routes - List of the available routes.\n\
+\tadd-route - Add a route. \n\t\tARGS:\n\
+\t\t1. The destination of the new route.\n\
+\tremove-route - Remove a route. \n\t\tARGS:\n\
+\t\t1. The destination of the route to remove.\n");
 }
 
 void task_list_routes()
@@ -193,4 +222,26 @@ void task_list_routes()
 	int i;
 	for (i = 0; i < num_of_routes; ++i)
 		printf("%s\n", routes[i].destination);
+}
+
+void task_add_route(struct task * task)
+{
+	if (task -> num_of_args != 1)
+	{
+		puts("[ERROR] Invalid number of args. It must be 1, which is the destination.");
+		return;
+	}
+	
+	add_route(task -> args[0], MAX_NUMBER_OF_ROUTES, &num_of_routes, routes);
+}
+
+void task_remove_route(struct task * task)
+{
+	if (task -> num_of_args != 1)
+	{
+		puts("[ERROR] Invalid number of args. It must be 1, which is the destination.");
+		return;
+	}
+	
+	remove_route(task -> args[0], &num_of_routes, routes);
 }
