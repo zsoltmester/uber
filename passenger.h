@@ -5,9 +5,9 @@
 
 struct passenger
 {
-	char * name;
-	char * phone;
-	time_t reg_time;
+	char name[16];
+	char phone[16];
+	time_t mod_time;
 };
 
 #endif

@@ -2,12 +2,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include "route.h"
 
 // customization points
 #define MAX_NUMBER_OF_ROUTES 16
-//#define MAX_NUMBER_OF_PASSENGERS 10
+#define MAX_NUMBER_OF_PASSENGERS 10
 #define DB_FILE_NAME "uber.db"
 
 enum cmd 
@@ -15,7 +16,9 @@ enum cmd
 	HELP, 
 	LIST_ROUTES,
 	ADD_ROUTE,
-	REMOVE_ROUTE
+	REMOVE_ROUTE,
+	ADD_PASSENGER,
+	REMOVE_PASSENGER
 };
 
 struct task
@@ -33,6 +36,8 @@ void task_help();
 void task_list_routes();
 void task_add_route(struct task * task);
 void task_remove_route(struct task * task);
+void task_add_passenger(struct task * task);
+void task_remove_passenger(struct task * task);
 
 struct route routes[MAX_NUMBER_OF_ROUTES];
 int num_of_routes = 0;
@@ -43,7 +48,6 @@ int main(int argc, char ** argv)
 	struct task * task = parse_args(argc, argv);
 	init_state();
 	do_task(task);
-	free(task);
 	save_db();
 	return 0;
 }
@@ -128,6 +132,14 @@ struct task * parse_args(int argc, char * argv[])
 	else if (strcmp(raw_cmd, "remove-route") == 0)
 	{
 		task->cmd = REMOVE_ROUTE;
+	}	
+	else if (strcmp(raw_cmd, "add-passenger") == 0)
+	{
+		task->cmd = ADD_PASSENGER;
+	}	
+	else if (strcmp(raw_cmd, "remove-passenger") == 0)
+	{
+		task->cmd = REMOVE_PASSENGER;
 	}
 	else
 	{
@@ -154,6 +166,12 @@ void do_task(struct task * task)
 		case REMOVE_ROUTE:
 			task_remove_route(task);
 			break;
+		case ADD_PASSENGER:
+			task_add_passenger(task);
+			break;
+		case REMOVE_PASSENGER:
+			task_remove_passenger(task);
+			break;
 	}
 }
 
@@ -165,16 +183,31 @@ COMMANDS\n\
 \thelp - This help.\n\
 \tlist-routes - List of the available routes.\n\
 \tadd-route - Add a route. \n\t\tARGS:\n\
-\t\t1. The destination of the new route.\n\
+\t\t1. Destination of the new route.\n\
 \tremove-route - Remove a route. \n\t\tARGS:\n\
-\t\t1. The destination of the route to remove.\n");
+\t\t1. Destination of the route to remove.\n\
+\tadd-passenger - Add a passenger. \n\t\tARGS:\n\
+\t\t1. Destination of the route.\n\
+\t\t2. Name.\n\
+\t\t2. Phone number.\n\
+\tremove-passenger - Remove a passenger. \n\t\tARGS:\n\
+\t\t1. Destination of the route.\n\
+\t\t2. Name.\n");
 }
 
 void task_list_routes()
 {
 	int i;
 	for (i = 0; i < num_of_routes; ++i)
+	{
 		printf("%s\n", routes[i].destination);
+		int j;
+		for (j = 0; j < routes[i].num_of_passengers; ++j)
+			printf("\tname: %s, phone: %s, last modification time: %s", 
+				routes[i].passengers[j].name, 
+				routes[i].passengers[j].phone, 
+				ctime(&(routes[i].passengers[j].mod_time)));
+	}
 }
 
 void task_add_route(struct task * task)
@@ -197,4 +230,34 @@ void task_remove_route(struct task * task)
 	}
 	
 	remove_route(task->args[0], &num_of_routes, routes);
+}
+
+void task_add_passenger(struct task * task)
+{
+	if (task->num_of_args != 3)
+	{
+		puts("[ERROR] Invalid number of args. It must be 3.");
+		return;
+	}
+
+	int i;
+	for (i = 0; i < num_of_routes; ++i)
+		if (strcmp(routes[i].destination, task->args[0]) == 0)
+		{
+			add_passenger(task->args[1], task->args[2], MAX_NUMBER_OF_PASSENGERS, &routes[i]);
+			return;
+		}
+	
+	puts("[ERROR] No route found for the given destination.");
+}
+
+void task_remove_passenger(struct task * task)
+{
+	if (task->num_of_args != 2)
+	{
+		puts("[ERROR] Invalid number of args. It must be 2.");
+		return;
+	}
+
+	remove_passenger(task->args[0], task->args[1], num_of_routes, routes);
 }
