@@ -134,3 +134,63 @@ int remove_passenger(char destination[16], char name[16], int num_of_routes, str
 	printf("[ERROR] No route available for this destination.\n");
 	return 1;
 }
+
+int modify_passenger(char destination[16], char name[16], char newDestination[16], 
+						char newName[16], char newPhone[16], int max_number_of_passengers, 
+						int num_of_routes, struct route routes[])
+{
+	if (strcmp(newDestination, "=") == 0 && strcmp(newName, "=") == 0 && strcmp(newPhone, "=") == 0)
+	{
+		printf("[ERROR] Nothing to modify.\n");
+		return 1;
+	}
+
+	int i;
+	for (i = 0; i < num_of_routes; ++i)
+	{
+		if (strcmp(routes[i].destination, destination) == 0)
+		{
+			int j;
+			for(j = 0; j < routes[i].num_of_passengers; ++j)
+				if (strcmp(routes[i].passengers[j].name, name) == 0)
+				{
+					if (strcmp(newDestination, "=") == 0)
+					{
+						newDestination = malloc(16);
+						strcpy(newDestination, routes[i].destination);
+					}
+						
+					if (strcmp(newName, "=") == 0)
+					{
+						newName = malloc(16);
+						strcpy(newName, routes[i].passengers[j].name);
+					}
+						
+					if (strcmp(newPhone, "=") == 0)
+					{
+						newPhone = malloc(16);
+						strcpy(newPhone, routes[i].passengers[j].phone);
+					}
+						
+					remove_passenger(destination, name, num_of_routes, routes);
+					
+					int k;
+					for (k = 0; k < num_of_routes; ++k)
+						if (strcmp(routes[k].destination, newDestination) == 0)
+						{
+							add_passenger(newName, newPhone, max_number_of_passengers, &(routes[k]));
+							return 0;
+						}
+						
+					printf("[ERROR] No route available for this destination.\n");
+					return 1;	
+				}
+			
+			printf("[ERROR] No passenger available with this name for this destination.\n");
+			return 1;
+		}
+	}
+	
+	printf("[ERROR] No route available for this destination.\n");
+	return 1;	
+}

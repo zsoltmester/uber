@@ -18,19 +18,20 @@ enum cmd
 	ADD_ROUTE,
 	REMOVE_ROUTE,
 	ADD_PASSENGER,
-	REMOVE_PASSENGER
+	REMOVE_PASSENGER,
+	MODIFY_PASSENGER
 };
 
 struct task
 {
 	enum cmd cmd;
 	int num_of_args;
-	char * args[16];
+	char ** args;
 };
 
 void init_state();
 void save_db();
-struct task * parse_args(int argc, char * argv[]);
+struct task * parse_args(int argc, char ** argv);
 void do_task(struct task * task);
 void task_help();
 void task_list_routes();
@@ -38,6 +39,7 @@ void task_add_route(struct task * task);
 void task_remove_route(struct task * task);
 void task_add_passenger(struct task * task);
 void task_remove_passenger(struct task * task);
+void task_modify_passenger(struct task * task);
 
 struct route routes[MAX_NUMBER_OF_ROUTES];
 int num_of_routes = 0;
@@ -94,9 +96,9 @@ void save_db()
 		printf("[ERROR] Failed to save the database.\n");
 }
 
-struct task * parse_args(int argc, char * argv[])
+struct task * parse_args(int argc, char ** argv)
 {
-	struct task * task = malloc(sizeof(task));
+	struct task * task = malloc(sizeof(struct task *));
 	
 	if (argc < 2)
 	{
@@ -104,15 +106,10 @@ struct task * parse_args(int argc, char * argv[])
 		return task;
 	}
 	
-	task->num_of_args = argc - 2;
-	if (task->num_of_args > 0)
-	{
-		int i;
-		for (i = 2; i < argc; ++i)
-		{
-			task->args[i - 2] = malloc(16);
-			strcpy(task->args[i - 2], argv[i]);	
-		}	
+	task->num_of_args = argc;
+	if (task->num_of_args > 2)
+	{		
+		task->args = argv;	
 	}
 		
 	char * raw_cmd = argv[1];
@@ -140,6 +137,10 @@ struct task * parse_args(int argc, char * argv[])
 	else if (strcmp(raw_cmd, "remove-passenger") == 0)
 	{
 		task->cmd = REMOVE_PASSENGER;
+	}	
+	else if (strcmp(raw_cmd, "modify-passenger") == 0)
+	{
+		task->cmd = MODIFY_PASSENGER;
 	}
 	else
 	{
@@ -172,6 +173,9 @@ void do_task(struct task * task)
 		case REMOVE_PASSENGER:
 			task_remove_passenger(task);
 			break;
+		case MODIFY_PASSENGER:
+			task_modify_passenger(task);
+			break;
 	}
 }
 
@@ -192,7 +196,13 @@ COMMANDS\n\
 \t\t2. Phone number.\n\
 \tremove-passenger - Remove a passenger. \n\t\tARGS:\n\
 \t\t1. Destination of the route.\n\
-\t\t2. Name.\n");
+\t\t2. Name.\n\
+\tmodify-passenger - Modify a passenger. \n\t\tARGS:\n\
+\t\t1. Current destination of the route.\n\
+\t\t2. Current name.\n\
+\t\t3. New destination. In case of no change, type =\n\
+\t\t4. New name. In case of no change, type =\n\
+\t\t5. New phone. In case of no change, type =\n");
 }
 
 void task_list_routes()
@@ -212,29 +222,29 @@ void task_list_routes()
 
 void task_add_route(struct task * task)
 {
-	if (task->num_of_args != 1)
+	if (task->num_of_args != 3)
 	{
 		puts("[ERROR] Invalid number of args. It must be 1, which is the destination.");
 		return;
 	}
 	
-	add_route(task->args[0], MAX_NUMBER_OF_ROUTES, &num_of_routes, routes);
+	add_route(task->args[2], MAX_NUMBER_OF_ROUTES, &num_of_routes, routes);
 }
 
 void task_remove_route(struct task * task)
 {
-	if (task->num_of_args != 1)
+	if (task->num_of_args != 3)
 	{
 		puts("[ERROR] Invalid number of args. It must be 1, which is the destination.");
 		return;
 	}
 	
-	remove_route(task->args[0], &num_of_routes, routes);
+	remove_route(task->args[2], &num_of_routes, routes);
 }
 
 void task_add_passenger(struct task * task)
 {
-	if (task->num_of_args != 3)
+	if (task->num_of_args != 5)
 	{
 		puts("[ERROR] Invalid number of args. It must be 3.");
 		return;
@@ -242,9 +252,9 @@ void task_add_passenger(struct task * task)
 
 	int i;
 	for (i = 0; i < num_of_routes; ++i)
-		if (strcmp(routes[i].destination, task->args[0]) == 0)
+		if (strcmp(routes[i].destination, task->args[2]) == 0)
 		{
-			add_passenger(task->args[1], task->args[2], MAX_NUMBER_OF_PASSENGERS, &routes[i]);
+			add_passenger(task->args[3], task->args[4], MAX_NUMBER_OF_PASSENGERS, &routes[i]);
 			return;
 		}
 	
@@ -253,11 +263,23 @@ void task_add_passenger(struct task * task)
 
 void task_remove_passenger(struct task * task)
 {
-	if (task->num_of_args != 2)
+	if (task->num_of_args != 4)
 	{
 		puts("[ERROR] Invalid number of args. It must be 2.");
 		return;
 	}
 
-	remove_passenger(task->args[0], task->args[1], num_of_routes, routes);
+	remove_passenger(task->args[2], task->args[3], num_of_routes, routes);
+}
+
+void task_modify_passenger(struct task * task)
+{
+	if (task->num_of_args != 7)
+	{
+		puts("[ERROR] Invalid number of args. It must be 5.");
+		return;
+	}
+
+	modify_passenger(task->args[2], task->args[3], task->args[4], task->args[5], task->args[6], 
+						MAX_NUMBER_OF_PASSENGERS, num_of_routes, routes);
 }

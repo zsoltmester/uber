@@ -16,5 +16,8 @@ int remove_route(char destination[16], int *num_of_routes, struct route routes[]
 int add_passenger(char name[16], char phone[16], int max_number_of_passengers, struct route * route);
 int is_passenger_available(char name[16], struct route route);
 int remove_passenger(char destination[16], char name[16], int num_of_routes, struct route routes[]);
+int modify_passenger(char destination[16], char name[16], char newDestination[16], 
+						char newName[16], char newPhone[16], int max_number_of_passengers, 
+						int num_of_routes, struct route routes[]);
 
 #endif
