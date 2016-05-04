@@ -357,7 +357,8 @@ void manage_route(pid_t pid, int pipefd[2], struct route *route)
 	close(pipefd[0]);
 
 	// Write out the results.
-	for (int i = 0; i < fb.num_of_passengers; ++i)
+	int i;
+	for (i = 0; i < fb.num_of_passengers; ++i)
 	{
 		printf("%s answer: %d\n", fb.passengers[i].name, fb.values[i]);
 	}
@@ -399,6 +400,6 @@ void guide_route(int pipefd[2], struct route *route)
 	close(pipefd[1]);
 
 	// Waiting for the response for the Über, that the results arrived.
-	puts("As a courier, I waiting for the termination signal from the Über.");
+	puts("As a courier, I am waiting for the termination signal from the Über...");
 	pause();
 }
