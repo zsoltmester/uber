@@ -70,6 +70,16 @@ int remove_route(char destination[DESTINATION_LENGTH], int *num_of_routes, struc
 	return 0;
 }
 
+struct route* get_route(char destination[DESTINATION_LENGTH], int num_of_routes, struct route routes[])
+{
+	int i;
+	for (i = 0; i < num_of_routes; i++)
+		if (strcmp(routes[i].destination, destination) == 0)
+			return &routes[i];
+
+	return NULL;
+}
+
 int add_passenger(char name[PASSENGER_NAME_LENGTH], char phone[PASSENGER_PHONE_LENGTH], struct route * route)
 {
 	if (route->num_of_passengers == MAX_NUMBER_OF_PASSENGERS)

@@ -3,10 +3,13 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <signal.h>
+#include <sys/wait.h>
 
 #include "configuration.h"
-#include "route.h"
+#include "feedback.h"
 #include "passenger.h"
+#include "route.h"
 
 enum cmd
 {
@@ -16,7 +19,8 @@ enum cmd
 	REMOVE_ROUTE,
 	ADD_PASSENGER,
 	REMOVE_PASSENGER,
-	MODIFY_PASSENGER
+	MODIFY_PASSENGER,
+	TAKE_ROUTE
 };
 
 struct task
@@ -37,6 +41,9 @@ void task_remove_route(struct task * task);
 void task_add_passenger(struct task * task);
 void task_remove_passenger(struct task * task);
 void task_modify_passenger(struct task * task);
+void task_take_route(struct task * task);
+void manage_route(pid_t pid, int pipefd[2], struct route *route);
+void guide_route(int pipefd[2], struct route *route);
 
 struct route routes[MAX_NUMBER_OF_ROUTES];
 int num_of_routes = 0;
@@ -139,6 +146,10 @@ struct task * parse_args(int argc, char ** argv)
 	{
 		task->cmd = MODIFY_PASSENGER;
 	}
+	else if (strcmp(raw_cmd, "take-route") == 0)
+	{
+		task->cmd = TAKE_ROUTE;
+	}
 	else
 	{
 		printf("Invalid command: %s\n", raw_cmd);
@@ -173,12 +184,16 @@ void do_task(struct task * task)
 		case MODIFY_PASSENGER:
 			task_modify_passenger(task);
 			break;
+			break;
+		case TAKE_ROUTE:
+			task_take_route(task);
+			break;
 	}
 }
 
 void task_help()
 {
-	puts("NAME\n\tuber - Best of ŰBER - A passenger management tool.\n\
+	puts("NAME\n\tuber - Best of Über - A passenger management tool.\n\
 SYNOPSIS\n\tuber <command> [<args>]\n\
 COMMANDS\n\
 \thelp - This help.\n\
@@ -199,7 +214,9 @@ COMMANDS\n\
 \t\t2. Current name.\n\
 \t\t3. New destination. In case of no change, type =\n\
 \t\t4. New name. In case of no change, type =\n\
-\t\t5. New phone. In case of no change, type =\n");
+\t\t5. New phone. In case of no change, type =\n\
+\ttake-route - Take a route. \n\t\tARGS:\n\
+\t\t1. Destination of the route.\n");
 }
 
 void task_list_routes()
@@ -278,4 +295,110 @@ void task_modify_passenger(struct task * task)
 	}
 
 	modify_passenger(task->args[2], task->args[3], task->args[4], task->args[5], task->args[6], num_of_routes, routes);
+}
+
+void task_take_route(struct task * task)
+{
+	if (task->num_of_args != 3)
+	{
+		puts("[ERROR] Invalid number of args. It must be 1.");
+		return;
+	}
+
+	// Process the only argument.
+	struct route *route = get_route(task->args[2], num_of_routes, routes);
+	if (route != NULL)
+	{
+		printf("Take a route to %s...\n", route -> destination);
+	}
+	else
+	{
+		printf("[ERROR] No route to %s.\n", route -> destination);
+		return;
+	}
+
+	// Create the pipe.
+	int pipefd[2];
+	if (pipe(pipefd) == -1)
+	{
+		printf("[ERROR] Cannot instantiate a pipe.\n");
+		return;
+	}
+
+	// Create the child process, which will be the 'courier'.
+	pid_t pid = fork();
+	if (pid < 0)
+	{
+		printf("[ERROR] Cannot fork.\n");
+		return;
+	}
+	else if (pid > 0)
+	{
+		// Parent process, which is the 'über'.
+		manage_route(pid, pipefd, route);
+	}
+	else
+	{
+		// Child process, which is the 'courier'.
+		guide_route(pipefd, route);
+	}
+}
+
+void manage_route(pid_t pid, int pipefd[2], struct route *route)
+{
+	// Close the writing end.
+	close(pipefd[1]);
+
+	struct feedback fb;
+
+	// Waiting for the results.
+	puts("The Über is waiting for the results...");
+	read(pipefd[0], &fb, sizeof(fb));
+	close(pipefd[0]);
+
+	// Write out the results.
+	for (int i = 0; i < fb.num_of_passengers; ++i)
+	{
+		printf("%s answer: %d\n", fb.passengers[i].name, fb.values[i]);
+	}
+
+	// Sends a signal to the courier that the result are arrived.
+	puts("As the Über, I am sending a signal to the courier that the result are arrived...");
+	kill(pid, SIGTERM);
+
+	// Wait for the courier and terminate.
+	int status;
+    waitpid(pid, &status, 0);
+	puts("The courier terminated and the Über is terminating now...");
+}
+
+void guide_route(int pipefd[2], struct route *route)
+{
+	// Close the reading end.
+	close(pipefd[0]);
+
+	// Guide the route.
+	puts("The route is started...");
+	int i;
+	for (i = 0; i < ROUTE_LENGTH; ++i)
+	{
+		printf("Remaining time from the route: %d\n", ROUTE_LENGTH - i);
+		sleep(1);
+	}
+
+	// Generate and write out the feedbacks.
+	struct feedback fb;
+  	srand(time(NULL));
+	fb.num_of_passengers = route -> num_of_passengers;
+	for (i = 0; i < route -> num_of_passengers; ++i)
+	{
+		fb.passengers[i] = (route -> passengers)[i];
+		fb.values[i] = 1 + rand() % 5;
+	}
+	write(pipefd[1], &fb, sizeof(fb));
+	close(pipefd[1]);
+
+	// Waiting for the response for the Über, that the results arrived.
+	puts("As a courier, I waiting for the termination signal from the Über.");
+	pause();
 }

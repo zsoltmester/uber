@@ -13,6 +13,7 @@ struct route {
 int add_route(char destination[DESTINATION_LENGTH], int *num_of_routes, struct route routes[]);
 int is_route_available(char destination[DESTINATION_LENGTH], int num_of_routes, struct route routes[]);
 int remove_route(char destination[DESTINATION_LENGTH], int *num_of_routes, struct route routes[]);
+struct route* get_route(char destination[DESTINATION_LENGTH], int num_of_routes, struct route routes[]);
 
 int add_passenger(char name[PASSENGER_NAME_LENGTH], char phone[PASSENGER_PHONE_LENGTH], struct route * route);
 int is_passenger_available(char name[PASSENGER_NAME_LENGTH], struct route route);
